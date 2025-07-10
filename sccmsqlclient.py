@@ -129,6 +129,10 @@ class SCCM_SQLSHELL(cmd.Cmd):
     sccm_BGB_ResTaskPushHistory [TaskID]
     sccm_BGB_ResTaskPushPending [TaskID]
 
+    # Extended
+    sccm_add_admin [Username] [Role]     - Give a user a SCCM admin role
+    sccm_remove_admin [Username] [Role]  - Remove a user from a SCCM admin role
+
     """
         )
 
@@ -596,7 +600,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
     def do_sccm_add_admin(self, arg=""):
         split_arg = arg.split()
         if len(split_arg) < 2:
-            logging.error("Did not get expected 2 arguments [username] and [role]")
+            logging.error("Did not get expected 2 arguments [Username] and [Role]")
             return
         username = split_arg[0]
         role = " ".join(split_arg[1:])

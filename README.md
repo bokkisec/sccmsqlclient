@@ -9,7 +9,11 @@ A dedicated MSSQL client for SCCM database exploration and exploitation.
 
 ## Usage 
 
-TODO
+Extended commands:
+```
+sccm_add_admin [Username] [Role]     - Give a user a SCCM admin role
+sccm_remove_admin [Username] [Role]  - Remove a user from a SCCM admin role
+```
 
 ## Requirements
 - impacket
