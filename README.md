@@ -11,7 +11,7 @@ A dedicated MSSQL client for SCCM database exploration and exploitation.
 
 Extended commands:
 ```
-sccm_add_admin [Username] [Role]     - Give a user a SCCM admin role
+sccm_add_admin [Username] [Role]     - Add a user to a SCCM admin role
 sccm_remove_admin [Username] [Role]  - Remove a user from a SCCM admin role
 ```
 
