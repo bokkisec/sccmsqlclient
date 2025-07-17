@@ -141,7 +141,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
     sccm_restore_full [SID_encoded]                      - Restore default FA's SID to the one specified
 
     sccm_programs [Name]           - Show installed programs (use argument to filter devices)
-    sccm_operatingsystems [Filter] - Show operating systems (use argument to filter devices)
+    sccm_operatingsystems [Name]   - Show operating systems (use argument to filter devices)
     """
         )
 
@@ -799,7 +799,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
         self.__run(query)
     
     """
-    sccm_programs [Filter]   - Show installed programs (use argument to filter devices)
+    sccm_programs [Name]   - Show installed programs (use argument to filter devices)
     """
     def do_sccm_programs(self, arg=""):
         Filter = arg
@@ -808,7 +808,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
         self.__run(query)
     
     """
-    sccm_operatingsystems [Filter] - Show operating systems (use argument to filter devices)
+    sccm_operatingsystems [Name] - Show operating systems (use argument to filter devices)
     """
     def do_sccm_operatingsystems(self, arg=""):
         Filter = arg

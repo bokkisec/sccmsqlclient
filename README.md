@@ -26,7 +26,7 @@ sccm_restore_targ [SID_encoded] [target_user]        - Restore target user's SID
 sccm_restore_full [SID_encoded]                      - Restore default FA's SID to the one specified
 
 sccm_programs [Name]           - Show installed programs (use argument to filter devices)
-sccm_operatingsystems [Filter] - Show operating systems (use argument to filter devices)
+sccm_operatingsystems [Name]   - Show operating systems (use argument to filter devices)
 ```
 
 Original commands:
