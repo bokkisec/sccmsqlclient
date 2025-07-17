@@ -140,7 +140,8 @@ class SCCM_SQLSHELL(cmd.Cmd):
     sccm_restore_targ [SID_encoded] [target_user]        - Restore target user's SID to the one specified
     sccm_restore_full [SID_encoded]                      - Restore default FA's SID to the one specified
 
-    sccm_programs [Name]   - Show installed programs (use argument to filter devices)
+    sccm_programs [Name]           - Show installed programs (use argument to filter devices)
+    sccm_operatingsystems [Filter] - Show operating systems (use argument to filter devices)
     """
         )
 
@@ -798,12 +799,21 @@ class SCCM_SQLSHELL(cmd.Cmd):
         self.__run(query)
     
     """
-    sccm_programs [Filter]   - Show installed programs
+    sccm_programs [Filter]   - Show installed programs (use argument to filter devices)
     """
     def do_sccm_programs(self, arg=""):
         Filter = arg
 
         query = f"SELECT TOP {self._limit} syst.Name0 AS Hostname, syst.Full_Domain_Name0 AS Domain, prog.DisplayName0 AS Program, prog.Version0 AS Version, prog.Publisher0 AS Publisher FROM v_Add_Remove_Programs prog LEFT JOIN v_R_System syst ON prog.ResourceID = syst.ResourceID WHERE prog.DisplayName0 IS NOT null AND prog.Publisher0 NOT LIKE '%Microsoft%' AND syst.Name0 LIKE '%{Filter}%' ORDER BY prog.ResourceID;"
+        self.__run(query)
+    
+    """
+    sccm_operatingsystems [Filter] - Show operating systems (use argument to filter devices)
+    """
+    def do_sccm_operatingsystems(self, arg=""):
+        Filter = arg
+
+        query = f"SELECT TOP {self._limit} syst.Name0 AS Hostname, syst.Full_Domain_Name0 AS Domain, os.Caption00 AS OS, os.Version00 AS Version FROM Operating_System_DATA os LEFT JOIN v_R_System syst ON os.MachineID = syst.ResourceID WHERE syst.Name0 LIKE '%{Filter}%'"
         self.__run(query)
 
 if __name__ == "__main__":

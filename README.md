@@ -25,7 +25,8 @@ sccm_impersonate_full [your_user]                    - Impersonate the default "
 sccm_restore_targ [SID_encoded] [target_user]        - Restore target user's SID to the one specified
 sccm_restore_full [SID_encoded]                      - Restore default FA's SID to the one specified
 
-sccm_programs [Name]   - Show installed programs (use argument to filter devices)
+sccm_programs [Name]           - Show installed programs (use argument to filter devices)
+sccm_operatingsystems [Filter] - Show operating systems (use argument to filter devices)
 ```
 
 Original commands:
