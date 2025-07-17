@@ -22,7 +22,7 @@ sccm_impersonate_safe_targ [your_user] [target_user] - Safely impersonate a targ
 sccm_impersonate_safe_full [your_user]               - Safely impersonate the default "Full Administrator"
 sccm_impersonate_targ [your_user] [target_user]      - Impersonate a target admin
 sccm_impersonate_full [your_user]                    - Impersonate the default "Full Administrator"
-sccm_restore_targeted [SID_encoded] [target_user]    - Restore target user's SID to the one specified
+sccm_restore_targ [SID_encoded] [target_user]        - Restore target user's SID to the one specified
 sccm_restore_full [SID_encoded]                      - Restore default FA's SID to the one specified
 
 sccm_programs [Name]   - Show installed programs (use argument to filter devices)

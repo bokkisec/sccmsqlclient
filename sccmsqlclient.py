@@ -137,7 +137,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
     sccm_impersonate_safe_full [your_user]               - Safely impersonate the default "Full Administrator"
     sccm_impersonate_targ [your_user] [target_user]      - Impersonate a target admin
     sccm_impersonate_full [your_user]                    - Impersonate the default "Full Administrator"
-    sccm_restore_targeted [SID_encoded] [target_user]    - Restore target user's SID to the one specified
+    sccm_restore_targ [SID_encoded] [target_user]        - Restore target user's SID to the one specified
     sccm_restore_full [SID_encoded]                      - Restore default FA's SID to the one specified
 
     sccm_programs [Name]   - Show installed programs (use argument to filter devices)
@@ -734,7 +734,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
     """
     sccm_impersonate_targeted [your_user] [target_user]  - Impersonate a target admin
     """
-    def do_sccm_impersonate_targeted(self, arg=""):
+    def do_sccm_impersonate_targ(self, arg=""):
         split_arg = arg.split()
         if len(split_arg) != 2:
             logging.error("Did not get expected 2 arguments [your_user] and [target_user]")
@@ -763,7 +763,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
 
         sid_backup = self.full_admin_sid()
         logging.info(f"OPSEC: You have overwritten the SID of the default admin.")
-        logging.info(f"Restore command: sccm_restore_full {sid_enc_target}")
+        logging.info(f"Restore command: sccm_restore_full {sid_backup}")
 
         sid_new = self.user_to_sid(your_user)
 
@@ -773,7 +773,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
     """
     sccm_restore_targeted [SID_encoded] [target_user]   - Restore target user's SID to the one specified
     """
-    def do_sccm_restore_targeted(self, arg=""):
+    def do_sccm_restore_targ(self, arg=""):
         split_arg = arg.split()
         if len(split_arg) != 2:
             logging.error("Did not get expected 2 arguments [SID_encode] and [target_user]")
