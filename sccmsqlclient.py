@@ -58,7 +58,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
             logging.info(f"Found SCCM site DB: {site_code_dbname}")
             self.sql_query(f"use CM_{self._site_code}")
         except:
-            logging.error(f"Failed to find an SSCM DB: CM_{site_code}")
+            logging.error(f"Failed to find an SCCM DB: CM_{site_code}")
             exit(0)
 
         self.set_prompt()
@@ -142,6 +142,8 @@ class SCCM_SQLSHELL(cmd.Cmd):
 
     sccm_programs [Name]           - Show installed programs (use argument to filter devices)
     sccm_operatingsystems [Name]   - Show operating systems (use argument to filter devices)
+
+    raw_query [Query]   - Execute a raw MSSQL query
     """
         )
 
@@ -815,6 +817,19 @@ class SCCM_SQLSHELL(cmd.Cmd):
 
         query = f"SELECT TOP {self._limit} syst.Name0 AS Hostname, syst.Full_Domain_Name0 AS Domain, os.Caption00 AS OS, os.Version00 AS Version FROM Operating_System_DATA os LEFT JOIN v_R_System syst ON os.MachineID = syst.ResourceID WHERE syst.Name0 LIKE '%{Filter}%'"
         self.__run(query)
+
+    """
+    raw_query [Query]   - Execute a raw MSSQL query
+    """
+    def do_raw_query(self, arg=""):
+        split_arg = arg.split()
+        if len(split_arg) == 0:
+            logging.error("Did not get expected argument [Query]")
+            return
+        Query = arg
+        self.__run(Query)
+
+
 
 if __name__ == "__main__":
 

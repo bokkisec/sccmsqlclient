@@ -27,6 +27,8 @@ sccm_restore_full [SID_encoded]                      - Restore default FA's SID 
 
 sccm_programs [Name]           - Show installed programs (use argument to filter devices)
 sccm_operatingsystems [Name]   - Show operating systems (use argument to filter devices)
+
+raw_query [Query]   - Execute a raw MSSQL query
 ```
 
 Original commands:
