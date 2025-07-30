@@ -144,6 +144,8 @@ class SCCM_SQLSHELL(cmd.Cmd):
     sccm_operatingsystems [Name]   - Show operating systems (use argument to filter devices)
 
     raw_query [Query]   - Execute a raw MSSQL query
+
+    collection_run_script [collection_id]   - Run powershell script across device collection
     """
         )
 
@@ -828,6 +830,53 @@ class SCCM_SQLSHELL(cmd.Cmd):
             return
         Query = arg
         self.__run(Query)
+    
+    """
+    collection_run_script [collection_id] - Run powershell script across device collection
+    """
+    def do_collection_run_script(self, collection_id=""):
+        if self._ps1_script_content is None:
+            logging.error("[!] PowerShell script content is empty, use load_ps1_script or set_ps1_script")
+        else:
+            if collection_id is "":
+                logging.info("No CollectionID provided, defaulting to SMSDM003 (All Clients)")
+                collection_id = "SMSDM003"
+
+            # Get unique IDs
+            script_name = self._script_name
+            script_guid = str(uuid.uuid4())
+            task_guid = str(uuid.uuid4())
+            self._last_taskid = task_guid
+            self._last_scriptid = script_guid
+            logging.info(f"Generated UUIDs: TaskGUID={task_guid} ScriptGUID={script_guid}")
+
+            # Add script
+            self.do_sccm_script_add(script_name, script_guid, self._ps1_script_content)
+
+            # Add Client Operation
+            query = f"INSERT INTO ClientOperation (UniqueID, Priority, Type, RequestedTime, SourceSite, IsSimulation) VALUES ('{{{task_guid}}}', 1, 135, '', {self._site_code}, 0);"
+            self.__run(query)
+
+            # Grab ClientOperationId for future queries
+            rows = self.__run_silent(f"SELECT ID FROM ClientOperation WHERE UniqueID = '{{{task_guid}}}';")
+            cli_op_id = rows[0]['ID']
+
+            # Configure target collection
+            query = f"INSERT INTO ClientOperationTarget_G (ClientOperationId, TargetCollectionSiteID) VALUES ({cli_op_id},'{collection_id}');"
+            self.__run(query)
+
+            # Get base64 encoded string value with script information
+            self.sql_query(f"SELECT ScriptHash, ScriptVersion from CM_{self._site_code}..Scripts WHERE ScriptGuid = '{script_guid}'")
+            script_version = self.sql.rows[0]["ScriptVersion"]
+            script_hash = self.sql.rows[0]["ScriptHash"]
+            task_param = f"<ScriptContent ScriptGuid='{script_guid}'><ScriptVersion>{script_version}</ScriptVersion><ScriptType>0</ScriptType><ScriptHash ScriptHashAlg='SHA256'>{script_hash}</ScriptHash><ScriptParameters></ScriptParameters><ParameterGroupHash ParameterHashAlg='SHA256'></ParameterGroupHash></ScriptContent>"
+            b64 = b64encode(task_param.encode()).decode()
+
+            # Add Client Action, which will automatically create a new task in BGB_Task and Modify BGB_ResTask
+            query = f"INSERT INTO ClientAction (UniqueID, ClientOperationId, Type, Version, State, StringValue) VALUES ('{{{task_guid}}}', {cli_op_id}, 135, 0, 1, '{b64}')"
+            self.__run(query)
+
+
 
 
 

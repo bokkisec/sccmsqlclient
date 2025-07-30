@@ -29,6 +29,8 @@ sccm_programs [Name]           - Show installed programs (use argument to filter
 sccm_operatingsystems [Name]   - Show operating systems (use argument to filter devices)
 
 raw_query [Query]   - Execute a raw MSSQL query
+
+collection_run_script [collection_id]   - Run powershell script across device collection
 ```
 
 Original commands:
