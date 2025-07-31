@@ -140,12 +140,14 @@ class SCCM_SQLSHELL(cmd.Cmd):
     sccm_restore_targ [SID_encoded] [target_user]        - Restore target user's SID to the one specified
     sccm_restore_full [SID_encoded]                      - Restore default FA's SID to the one specified
 
-    sccm_programs [Name]           - Show installed programs (use argument to filter devices)
-    sccm_operatingsystems [Name]   - Show operating systems (use argument to filter devices)
+    sccm_programs [Name]           - Show installed programs (use argument to filter)
+    sccm_operatingsystems [Name]   - Show operating systems (use argument to filter)
 
     raw_query [Query]   - Execute a raw MSSQL query
 
-    collection_run_script [collection_id]   - Run powershell script across device collection
+    collection_run_script [site_id]   - Run powershell script across device collection
+    collection_list [Filter]          - List device collections (use argument to filter)
+    collection_members [site_id]      - Show members of the specified collection
     """
         )
 
@@ -832,15 +834,15 @@ class SCCM_SQLSHELL(cmd.Cmd):
         self.__run(Query)
     
     """
-    collection_run_script [collection_id] - Run powershell script across device collection
+    collection_run_script [site_id] - Run powershell script across device collection
     """
-    def do_collection_run_script(self, collection_id=""):
+    def do_collection_run_script(self, site_id=""):
         if self._ps1_script_content is None:
             logging.error("[!] PowerShell script content is empty, use load_ps1_script or set_ps1_script")
         else:
-            if collection_id is "":
-                logging.info("No CollectionID provided, defaulting to SMSDM003 (All Clients)")
-                collection_id = "SMSDM003"
+            if site_id is "":
+                logging.info("No SiteID provided, defaulting to SMSDM003 (All Clients)")
+                site_id = "SMSDM003"
 
             # Get unique IDs
             script_name = self._script_name
@@ -862,7 +864,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
             cli_op_id = rows[0]['ID']
 
             # Configure target collection
-            query = f"INSERT INTO ClientOperationTarget_G (ClientOperationId, TargetCollectionSiteID) VALUES ({cli_op_id},'{collection_id}');"
+            query = f"INSERT INTO ClientOperationTarget_G (ClientOperationId, TargetCollectionSiteID) VALUES ({cli_op_id},'{site_id}');"
             self.__run(query)
 
             # Get base64 encoded string value with script information
@@ -872,13 +874,17 @@ class SCCM_SQLSHELL(cmd.Cmd):
             task_param = f"<ScriptContent ScriptGuid='{script_guid}'><ScriptVersion>{script_version}</ScriptVersion><ScriptType>0</ScriptType><ScriptHash ScriptHashAlg='SHA256'>{script_hash}</ScriptHash><ScriptParameters></ScriptParameters><ParameterGroupHash ParameterHashAlg='SHA256'></ParameterGroupHash></ScriptContent>"
             b64 = b64encode(task_param.encode()).decode()
 
-            # Add Client Action, which will automatically create a new task in BGB_Task and Modify BGB_ResTask
+            # Add Client Action, which will automatically create a new task in BGB_Task and modify BGB_ResTask
             query = f"INSERT INTO ClientAction (UniqueID, ClientOperationId, Type, Version, State, StringValue) VALUES ('{{{task_guid}}}', {cli_op_id}, 135, 0, 1, '{b64}')"
             self.__run(query)
+    
+    """
+    collection_list [Filter] - List collections (use argument to filter collections)
+    """
 
-
-
-
+    """
+    collection_members [site_id] - Show members of the specified collection
+    """
 
 if __name__ == "__main__":
 
