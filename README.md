@@ -25,13 +25,13 @@ sccm_impersonate_full [your_user]                    - Impersonate the default "
 sccm_restore_targ [SID_encoded] [target_user]        - Restore target user's SID to the one specified
 sccm_restore_full [SID_encoded]                      - Restore default FA's SID to the one specified
 
-sccm_programs [Name]           - Show installed programs (use argument to filter)
-sccm_operatingsystems [Name]   - Show operating systems (use argument to filter)
+sccm_programs [Name]           - Show installed programs (use argument to filter devices)
+sccm_operatingsystems [Name]   - Show operating systems (use argument to filter devices)
 
 raw_query [Query]   - Execute a raw MSSQL query
 
 collection_run_script [site_id]   - Run powershell script across device collection
-collection_list [Filter]          - List devices collections (use argument to filter)
+collection_list [Name]            - List device collections (use argument to filter collections)
 collection_members [site_id]      - Show members of the specified collection
 ```
 

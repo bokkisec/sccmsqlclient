@@ -140,13 +140,13 @@ class SCCM_SQLSHELL(cmd.Cmd):
     sccm_restore_targ [SID_encoded] [target_user]        - Restore target user's SID to the one specified
     sccm_restore_full [SID_encoded]                      - Restore default FA's SID to the one specified
 
-    sccm_programs [Name]           - Show installed programs (use argument to filter)
-    sccm_operatingsystems [Name]   - Show operating systems (use argument to filter)
+    sccm_programs [Name]           - Show installed programs (use argument to filter devices)
+    sccm_operatingsystems [Name]   - Show operating systems (use argument to filter devices)
 
     raw_query [Query]   - Execute a raw MSSQL query
 
     collection_run_script [site_id]   - Run powershell script across device collection
-    collection_list [Filter]          - List device collections (use argument to filter)
+    collection_list [Name]            - List device collections (use argument to filter collections)
     collection_members [site_id]      - Show members of the specified collection
     """
         )
@@ -841,8 +841,8 @@ class SCCM_SQLSHELL(cmd.Cmd):
             logging.error("[!] PowerShell script content is empty, use load_ps1_script or set_ps1_script")
         else:
             if site_id is "":
-                logging.info("No SiteID provided, defaulting to SMSDM003 (All Clients)")
-                site_id = "SMSDM003"
+                logging.error("Missing [site_id] argument. Use collection_list to get it")
+                return
 
             # Get unique IDs
             script_name = self._script_name
@@ -879,12 +879,24 @@ class SCCM_SQLSHELL(cmd.Cmd):
             self.__run(query)
     
     """
-    collection_list [Filter] - List collections (use argument to filter collections)
+    collection_list [Name] - List collections (use argument to filter collections)
     """
+    def do_collection_list(self, arg=""):
+        Filter = arg
+
+        query = f"SELECT c.CollectionID, c.SiteID, c.CollectionName AS Name, cmc.AssignedCount AS DeviceCount FROM Collections c LEFT JOIN CollectionMemberCounts cmc ON c.CollectionID = cmc.CollectionID WHERE c.CollectionType = 2 AND c.CollectionName LIKE '%{Filter}%';"
+        self.__run(query)
 
     """
     collection_members [site_id] - Show members of the specified collection
     """
+    def do_collection_members(self, site_id=""):
+        if site_id is "":
+            logging.error("Missing [site_id] argument. Use collection_list to get it")
+            return
+
+        query = f"SELECT SiteID, MachineID, Name, Domain FROM CollectionMembers WHERE SiteID = '{site_id}';"
+        self.__run(query)
 
 if __name__ == "__main__":
 
