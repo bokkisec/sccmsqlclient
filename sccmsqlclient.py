@@ -81,42 +81,42 @@ class SCCM_SQLSHELL(cmd.Cmd):
     mask_query                 - mask query
     set_limit                  - set top limit [default 100]
 
-    # SCCM
-    sccm_sites                 - List Sites
+    # SCCM Enumeration
+    sccm_sites                     - List Sites
+    sccm_devices [Name]            - List devices and logged on user
+    sccm_devices_bgbstatus [Name]  - Get BGB status
+    sccm_devices_status [Name]     - Get device status
+    sccm_useraccounts [UserName]   - List User Accounts (NAA, ClientPush)
+    sccm_programs [Name]           - Show installed programs (use argument to filter devices)
+    sccm_operatingsystems [Name]   - Show operating systems (use argument to filter devices)
 
-    sccm_devices [Name]
-    sccm_devices_bgbstatus [Name]
-    sccm_devices_status [Name]
-
-
-    sccm_run_script [ResourceID]                      - Run PowerShell script on a given device
-
-    sccm_ScriptsExecutionStatus [ScriptGuid | TaskID] - Get the output of script executions
-    sccm_BGB_Tasks_clean [GUID]                       - Cleans all traces related to a given task
-    
-    sccm_useraccounts [UserName]                      - List User Accounts (NAA, ClientPush)
-    sccm_add_apps [Name]                              - List Azure AD Application configurations
-    sccm_decrypt_blob [ResourceID] [HEXBLOB]          - Run script to decrypt secret blob on a Management Point
-    
-
+    # Scripts (main)
     show_ps1_script
     set_ps1_script [Content]
     load_ps1_script [filename]
 
-    
-    last_task_info          - Print latest task GUIDs
-    last_task_output        - Show execution results of the latest Task launched with sccm_run_script
-    last_task_output_print  - Pretty print the execution's output
-    last_task_clean         - Clean Task and Script of the last sccm_run_script execution
+    sccm_run_script [ResourceID]                      - Run PowerShell script on a given device
+    sccm_ScriptsExecutionStatus [ScriptGuid | TaskID] - Get the output of script executions
 
-    sccm_set_sitecode [SITE_CODE]
+    collection_run_script [site_id]   - Run powershell script across device collection
+    collection_list [Name]            - List device collections (use argument to filter collections)
+    collection_members [site_id]      - Show members of the specified collection
 
+    # Scripts (more)
     sccm_scripts [ScriptName | ScriptGuid]
     sccm_scripts_full [ScriptName | ScriptGuid]
     sccm_script_add [ScriptName]
     sccm_script_delete [ScriptGuid]
     sccm_script_printbody [ScriptName | ScriptGuid]
+    sccm_BGB_Tasks_clean [GUID] - Cleans all traces related to a given task
 
+    # Last Task
+    last_task_info              - Print latest task GUIDs
+    last_task_output            - Show execution results of the latest Task launched with sccm_run_script
+    last_task_output_print      - Pretty print the execution's output
+    last_task_clean             - Clean Task and Script of the last sccm_run_script execution
+
+    # BGB
     sccm_BGB_Server [ServerName]
 
     sccm_BGB_Tasks [GUID]
@@ -129,7 +129,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
     sccm_BGB_ResTaskPushHistory [TaskID]
     sccm_BGB_ResTaskPushPending [TaskID]
 
-    # Extended
+    # Admins
     sccm_add_admin [Username] [Role]     - Add a user to a SCCM admin role
     sccm_remove_admin [Username]         - Remove a user from all SCCM admin roles
 
@@ -140,14 +140,11 @@ class SCCM_SQLSHELL(cmd.Cmd):
     sccm_restore_targ [SID_encoded] [target_user]        - Restore target user's SID to the one specified
     sccm_restore_full [SID_encoded]                      - Restore default FA's SID to the one specified
 
-    sccm_programs [Name]           - Show installed programs (use argument to filter devices)
-    sccm_operatingsystems [Name]   - Show operating systems (use argument to filter devices)
-
-    raw_query [Query]   - Execute a raw MSSQL query
-
-    collection_run_script [site_id]   - Run powershell script across device collection
-    collection_list [Name]            - List device collections (use argument to filter collections)
-    collection_members [site_id]      - Show members of the specified collection
+    # Misc
+    sccm_add_apps [Name]                     - List Azure AD Application configurations
+    sccm_decrypt_blob [ResourceID] [HEXBLOB] - Run script to decrypt secret blob on a Management Point
+    sccm_set_sitecode [SITE_CODE]            - Set SCCM site code
+    raw_query [Query]                        - Execute a raw MSSQL query
     """
         )
 
