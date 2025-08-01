@@ -862,6 +862,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
             # Grab ClientOperationId for future queries
             rows = self.__run_silent(f"SELECT ID FROM ClientOperation WHERE UniqueID = '{{{task_guid}}}';")
             cli_op_id = rows[0]['ID']
+            logging.info(f"Successfully added task to ClientOperation with an ID of {cli_op_id}")
 
             # Configure target collection
             query = f"INSERT INTO ClientOperationTarget_G (ClientOperationId, TargetCollectionSiteID) VALUES ({cli_op_id},'{site_id}');"
@@ -877,6 +878,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
             # Add Client Action, which will automatically create a new task in BGB_Task and modify BGB_ResTask
             query = f"INSERT INTO ClientAction (UniqueID, ClientOperationId, Type, Version, State, StringValue) VALUES ('{{{task_guid}}}', {cli_op_id}, 135, 0, 1, '{b64}')"
             self.__run(query)
+            logging.info(f"Task added to ClientAction. Script should execute shortly")
     
     """
     collection_list [Name] - List collections (use argument to filter collections)
