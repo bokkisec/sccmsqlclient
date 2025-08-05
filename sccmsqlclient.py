@@ -26,9 +26,9 @@ class SCCM_SQLSHELL(cmd.Cmd):
     _clean_scriptstore = True
 
 
-    _crypto_decrypt_useSiteSystemKey = """Add-Type -Path "C:\Program Files\Microsoft Configuration Manager\\bin\X64\microsoft.configurationmanager.azureaddiscovery.dll"\n$ss = [Microsoft.ConfigurationManager.AzureADDiscovery.Utilities]::GetDecryptedAppSecretKey("{BLOB}")\n[Microsoft.ConfigurationManager.AzureADDiscovery.Utilities]::ConvertToPlainString($ss)"""
+    _crypto_decrypt_useSiteSystemKey = """Add-Type -Path "$env:SMS_LOG_PATH\..\\bin\X64\microsoft.configurationmanager.azureaddiscovery.dll"\n$ss = [Microsoft.ConfigurationManager.AzureADDiscovery.Utilities]::GetDecryptedAppSecretKey("{BLOB}")\n[Microsoft.ConfigurationManager.AzureADDiscovery.Utilities]::ConvertToPlainString($ss)"""
 
-    _crypto_decrypt = """Add-Type -Path "C:\Program Files\Microsoft Configuration Manager\\bin\X64\microsoft.configurationmanager.cloudservicesmanager.dll"\n[Microsoft.ConfigurationManager.CloudServicesManager.Utility]::GetCertificateContent("{BLOB}", [ref]$null)"""
+    _crypto_decrypt = """Add-Type -Path "$env:SMS_LOG_PATH\..\\bin\X64\microsoft.configurationmanager.cloudservicesmanager.dll"\n[Microsoft.ConfigurationManager.CloudServicesManager.Utility]::GetCertificateContent("{BLOB}", [ref]$null)"""
 
     _script_name = 'CMPivot'
 
@@ -321,6 +321,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
             logging.error("Failed to delete script, GUID matches the built-in CMPivot")
         else:
             self.__run(f"DELETE FROM CM_{self._site_code}..SCRIPTS " f"WHERE ScriptGuid = '{script_guid}'")
+            logging.info(f'Done cleaning script {script_guid}')
 
     def do_sccm_script_printbody(self, filter=""):
         self.sql_query(
@@ -431,6 +432,8 @@ class SCCM_SQLSHELL(cmd.Cmd):
             self.__run(f"DELETE FROM CM_{self._site_code}..BGB_ResTaskPushHistory WHERE TaskID = {task_id}")
             self.__run(f"DELETE FROM CM_{self._site_code}..BGB_ResTaskPushPending WHERE TaskID = {task_id}")
             self.__run(f"DELETE FROM CM_{self._site_code}..BGB_Task WHERE TaskID = {task_id}")
+        logging.info(f'Done cleaning BGB Task {task_guid}')
+
 
     def do_sccm_run_script(self, resource_id=None):
         if self._ps1_script_content is None:
@@ -484,7 +487,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
                     print("\n".join(loads(script_output)))
                 except:
                     logging.warning('Failed to pretty print, dumping raw')
-                    print(script_output)
+                    print(script_output.encode('utf-8').decode('unicode_escape'))
 
     def do_last_task_info(self, filter):
         if self._last_taskid is None and self._last_scriptid is None:
