@@ -16,6 +16,7 @@ A dedicated MSSQL client for SCCM database exploration and exploitation.
 Extended commands:
 - Make sure to specify unique usernames (e.g. domain\username)
 ```
+sccm_show_admins [Name]              - Show SCCM admins (use argument to filter admins)
 sccm_add_admin [Username] [Role]     - Add a user to a SCCM admin role
 sccm_remove_admin [Username]         - Remove a user from all SCCM admin roles
 

@@ -130,6 +130,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
     sccm_BGB_ResTaskPushPending [TaskID]
 
     # Admins
+    sccm_show_admins [Name]              - Show SCCM admins (use argument to filter admins)
     sccm_add_admin [Username] [Role]     - Add a user to a SCCM admin role
     sccm_remove_admin [Username]         - Remove a user from all SCCM admin roles
 
@@ -645,6 +646,15 @@ class SCCM_SQLSHELL(cmd.Cmd):
         return sid_formatted
 
     """
+    sccm_show_admins [Name] - Show SCCM admins (use argument to filter admins)
+    """
+    def do_sccm_show_admins(self, arg=""):
+        Filter = arg
+
+        query = f"SELECT AdminID, AdminSID, LogonName FROM RBAC_Admins WHERE LogonName LIKE '%{Filter}%'"
+        self.__run(query)
+    
+    """
     sccm_add_admin [Username] [Role]  - Add a user to a SCCM admin role
     """
     def do_sccm_add_admin(self, arg=""):
@@ -840,7 +850,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
         if self._ps1_script_content is None:
             logging.error("[!] PowerShell script content is empty, use load_ps1_script or set_ps1_script")
         else:
-            if site_id is "":
+            if site_id == "":
                 logging.error("Missing [site_id] argument. Use collection_list to get it")
                 return
 
@@ -893,7 +903,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
     collection_members [site_id] - Show members of the specified collection
     """
     def do_collection_members(self, site_id=""):
-        if site_id is "":
+        if site_id == "":
             logging.error("Missing [site_id] argument. Use collection_list to get it")
             return
 
