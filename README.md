@@ -6,6 +6,7 @@ A dedicated MSSQL client for SCCM database exploration and exploitation.
 - Recon queries
 - Run PowerShell scripts on managed clients
 - Extract secrets
+- Manage and impersonate admins
 
 ## Usage
 - Run `sccmsqlclient.py` without arguments to get help for connection arguments, then run with arguments to connect to a remote MSSQL server on a SCCM environment.
