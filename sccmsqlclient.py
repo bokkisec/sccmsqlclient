@@ -86,9 +86,15 @@ class SCCM_SQLSHELL(cmd.Cmd):
     sccm_devices [Name]            - List devices and logged on user
     sccm_devices_bgbstatus [Name]  - Get BGB status
     sccm_devices_status [Name]     - Get device status
-    sccm_useraccounts [UserName]   - List User Accounts (NAA, ClientPush)
     sccm_programs [Name]           - Show installed programs (use argument to filter devices)
     sccm_operatingsystems [Name]   - Show operating systems (use argument to filter devices)
+
+    # Creds
+    sccm_useraccounts [UserName]             - List User Accounts (NAA, ClientPush)
+    sccm_decrypt_blob [ResourceID] [HEXBLOB] - Run script to decrypt secret blob on a Management Point
+
+    # Azure
+    sccm_add_apps [Name]   - List Azure AD Application configurations
 
     # Scripts (main)
     show_ps1_script
@@ -142,8 +148,6 @@ class SCCM_SQLSHELL(cmd.Cmd):
     sccm_restore_full [SID_encoded]                      - Restore default FA's SID to the one specified
 
     # Misc
-    sccm_add_apps [Name]                     - List Azure AD Application configurations
-    sccm_decrypt_blob [ResourceID] [HEXBLOB] - Run script to decrypt secret blob on a Management Point
     sccm_set_sitecode [SITE_CODE]            - Set SCCM site code
     raw_query [Query]                        - Execute a raw MSSQL query
     """
