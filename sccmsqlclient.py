@@ -149,7 +149,6 @@ class SCCM_SQLSHELL(cmd.Cmd):
 
     # Misc
     sccm_set_sitecode [SITE_CODE]            - Set SCCM site code
-    raw_query [Query]                        - Execute a raw MSSQL query
     """
         )
 

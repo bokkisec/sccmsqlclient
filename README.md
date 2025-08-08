@@ -10,6 +10,7 @@ A dedicated MSSQL client for SCCM database exploration and exploitation.
 
 ## Usage
 - Run `sccmsqlclient.py` without arguments to get help for connection arguments, then run with arguments to connect to a remote MSSQL server on a SCCM environment.
+- After you connect, use `help` to view prebuilt commands or execute raw queries
 
 ## Commands 
 
@@ -33,8 +34,6 @@ collection_members [site_id]      - Show members of the specified collection
 
 sccm_programs [Name]           - Show installed programs (use argument to filter devices)
 sccm_operatingsystems [Name]   - Show operating systems (use argument to filter devices)
-
-raw_query [Query]   - Execute a raw MSSQL query
 ```
 
 Original commands:
