@@ -2,6 +2,8 @@
 
 Fork of [https://github.com/synacktiv/sccmsqlclient](https://github.com/synacktiv/sccmsqlclient) with extended features.
 
+Associated blog post: [https://bokkisec.com/blog/SCCM_MSSQL](https://bokkisec.com/blog/SCCM_MSSQL)
+
 A dedicated MSSQL client for SCCM database exploration and exploitation.
 - Recon queries
 - Extract secrets
