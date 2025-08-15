@@ -1,14 +1,16 @@
 # sccmsqlclient (Extended)
 
-Fork of [https://github.com/synacktiv/sccmsqlclient](https://github.com/synacktiv/sccmsqlclient) with extended features.
-
-Associated blog post: [https://bokkisec.com/blog/SCCM_MSSQL](https://bokkisec.com/blog/SCCM_MSSQL)
-
 A dedicated MSSQL client for SCCM database exploration and exploitation.
 - Recon queries
 - Extract secrets
 - Manage and impersonate admins
 - Run PowerShell scripts on managed clients individually and across device collections
+
+Associated blog post: [https://bokkisec.com/blog/SCCM_MSSQL](https://bokkisec.com/blog/SCCM_MSSQL)
+
+## Credit
+- Original tool: [https://github.com/synacktiv/sccmsqlclient](https://github.com/synacktiv/sccmsqlclient)
+-  Project idea and mentorship: Garrett Foster (<a href="https://x.com/unsigned_sh0rt">@unsigned_sh0rt</a>)
 
 ## Usage
 - Run `sccmsqlclient.py` without arguments to get help for connection arguments, then run with arguments to connect to a remote MSSQL server on a SCCM environment.
